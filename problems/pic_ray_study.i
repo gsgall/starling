@@ -13,10 +13,10 @@
                   100 100 0
                   1 99 0
                   49 49 0'
-  start_directions = '1 2 0
-                      -2 -1 0
-                      5 -1 0
-                      1 1.1 0'
+  start_velocities = '1 2 1
+                      -2 -1 1
+                      5 -1 1
+                      1 1.1 1'
   execute_on = TIMESTEP_BEGIN
   always_cache_traces = true
 []

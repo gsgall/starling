@@ -26,6 +26,11 @@ public:
 
 protected:
   virtual void postExecuteStudy() override;
+  const RayDataIndex _charge_index;
+  const RayDataIndex _mass_index;
+  const RayDataIndex _v_x_index;
+  const RayDataIndex _v_y_index;
+  const RayDataIndex _v_z_index;
 
 private:
   /**
@@ -39,7 +44,7 @@ private:
   const std::vector<Point> & _start_points;
 
   /// The starting directions
-  const std::vector<Point> & _start_directions;
+  const std::vector<Point> & _start_velocities;
 
   /// Whether or not we've generated rays yet (restartable)
   bool & _has_generated;

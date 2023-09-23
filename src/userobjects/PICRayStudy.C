@@ -22,7 +22,7 @@ PICRayStudy::validParams()
   params.addRequiredParam<std::vector<Point>>("start_points",
                                               "The point(s) where the ray(s) start");
   params.addRequiredParam<std::vector<Point>>(
-      "start_directions",
+      "start_velocities",
       "The direction(s) that the ray(s) start in (does not need to be normalized)");
 
   // We're not going to use registration because we don't care to name our rays because
@@ -34,19 +34,25 @@ PICRayStudy::validParams()
 
 PICRayStudy::PICRayStudy(const InputParameters & parameters)
   : RayTracingStudy(parameters),
+    _charge_index(registerRayData("charge")),
+    _mass_index(registerRayData("mass")),
+    _v_x_index(registerRayData("v_x")),
+    _v_y_index(registerRayData("v_y")),
+    _v_z_index(registerRayData("v_z")),
     _start_points(getParam<std::vector<Point>>("start_points")),
-    _start_directions(getParam<std::vector<Point>>("start_directions")),
+    _start_velocities(getParam<std::vector<Point>>("start_velocities")),
     _has_generated(declareRestartableData<bool>("has_generated", false)),
     _banked_rays(
         declareRestartableDataWithContext<std::vector<std::shared_ptr<Ray>>>("_banked_rays", this))
 {
-  if (_start_points.size() != _start_directions.size())
-    paramError("start_directions", "Must be the same size as 'start_points'");
+  if (_start_points.size() != _start_velocities.size())
+    paramError("start_velocities", "Must be the same size as 'start_points'");
 }
 
 void
 PICRayStudy::generateRays()
 {
+
   // We generate rays the first time only, after that we will
   // pull from the bank and update velocities/max distances
   if (!_has_generated)
@@ -61,16 +67,39 @@ PICRayStudy::generateRays()
     // generate the rays for the local rays that we care about
     // and the claiming probably won't be necessary
     std::vector<std::shared_ptr<Ray>> rays(_start_points.size());
-
     // Create a ray for each point/direction/velocity triplet
     // Note that instead of keeping track of the velocity, we're
     // just going to set the maximum distance that a ray can
     // travel based on the timestep * the starting velocity.
     for (const auto i : index_range(_start_points))
     {
+      // std::cout << _fe_problem.mesh().dimension() << std::endl;
       rays[i] = acquireReplicatedRay();
       rays[i]->setStart(_start_points[i]);
-      rays[i]->setStartingDirection(_start_directions[i].unit());
+
+      // saving the inital velocities so we can have 3v (1d or 2d)
+      rays[i]->data()[_v_x_index] = _start_velocities[i](0);
+      rays[i]->data()[_v_y_index] = _start_velocities[i](1);
+      rays[i]->data()[_v_z_index] = _start_velocities[i](2);
+
+      // temp direction so we can adjust the direction the ray is
+      // traced in for the problem dimension
+      libMesh::Point direction = Point(0, 0, 0);
+
+      // setting directions so rays don't try and go outside of the mesh
+      switch (_fe_problem.mesh().dimension())
+      {
+        case 1:
+          direction(0) = _start_velocities[i](0);
+        case 2:
+          direction(0) = _start_velocities[i](0);
+          direction(1) = _start_velocities[i](1);
+      }
+
+      rays[i]->data()[_charge_index] = 1;
+      rays[i]->data()[_mass_index] = 1;
+
+      rays[i]->setStartingDirection(direction.unit());
       rays[i]->setStartingMaxDistance(maxDistance(*rays[i]));
     }
 
@@ -120,5 +149,21 @@ Real
 PICRayStudy::maxDistance(const Ray & ray) const
 {
   // velocity * dt
-  return std::sqrt(ray.direction() * ray.direction()) * _fe_problem.dt();
+  libMesh::Point velocity = Point(0, 0, 0);
+
+  // calculating max distance for the correct problem dimention
+  switch (_fe_problem.mesh().dimension())
+  {
+    case 1:
+      velocity(0) = ray.data()[_v_x_index];
+    case 2:
+      velocity(0) = ray.data()[_v_x_index];
+      velocity(1) = ray.data()[_v_x_index];
+    case 3:
+      velocity(0) = ray.data()[_v_x_index];
+      velocity(1) = ray.data()[_v_y_index];
+      velocity(2) = ray.data()[_v_z_index];
+  }
+
+  return std::sqrt(velocity * velocity) * _fe_problem.dt();
 }
