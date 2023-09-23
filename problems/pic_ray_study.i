@@ -17,6 +17,7 @@
                       -2 -1 1
                       5 -1 1
                       1 1.1 1'
+  species = 'test1 test2'
   execute_on = TIMESTEP_BEGIN
   always_cache_traces = true
 []

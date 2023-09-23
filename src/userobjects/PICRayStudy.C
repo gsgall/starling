@@ -25,6 +25,9 @@ PICRayStudy::validParams()
       "start_velocities",
       "The direction(s) that the ray(s) start in (does not need to be normalized)");
 
+  params.addRequiredParam<std::vector<std::string>>(
+      "species", "The species of particles that exist in the study");
+
   // We're not going to use registration because we don't care to name our rays because
   // we will have a lot of them
   params.set<bool>("_use_ray_registration") = false;
@@ -36,11 +39,13 @@ PICRayStudy::PICRayStudy(const InputParameters & parameters)
   : RayTracingStudy(parameters),
     _charge_index(registerRayData("charge")),
     _mass_index(registerRayData("mass")),
+    _species_index(registerRayData("species")),
     _v_x_index(registerRayData("v_x")),
     _v_y_index(registerRayData("v_y")),
     _v_z_index(registerRayData("v_z")),
     _start_points(getParam<std::vector<Point>>("start_points")),
     _start_velocities(getParam<std::vector<Point>>("start_velocities")),
+    _species_list(getParam<std::vector<std::string>>("species")),
     _has_generated(declareRestartableData<bool>("has_generated", false)),
     _banked_rays(
         declareRestartableDataWithContext<std::vector<std::shared_ptr<Ray>>>("_banked_rays", this))
@@ -52,7 +57,11 @@ PICRayStudy::PICRayStudy(const InputParameters & parameters)
 void
 PICRayStudy::generateRays()
 {
-
+  // mapping the species names to an index for each one provided
+  for (const auto i : index_range(_species_list))
+  {
+    _species_map[i] = _species_list[i];
+  }
   // We generate rays the first time only, after that we will
   // pull from the bank and update velocities/max distances
   if (!_has_generated)
@@ -95,9 +104,9 @@ PICRayStudy::generateRays()
           direction(0) = _start_velocities[i](0);
           direction(1) = _start_velocities[i](1);
       }
-
-      rays[i]->data()[_charge_index] = 1;
-      rays[i]->data()[_mass_index] = 1;
+      rays[i]->data()[_charge_index] = 0;
+      rays[i]->data()[_mass_index] = 0;
+      rays[i]->data()[_species_index] = 0;
 
       rays[i]->setStartingDirection(direction.unit());
       rays[i]->setStartingMaxDistance(maxDistance(*rays[i]));

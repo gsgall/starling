@@ -28,6 +28,7 @@ protected:
   virtual void postExecuteStudy() override;
   const RayDataIndex _charge_index;
   const RayDataIndex _mass_index;
+  const RayDataIndex _species_index;
   const RayDataIndex _v_x_index;
   const RayDataIndex _v_y_index;
   const RayDataIndex _v_z_index;
@@ -45,7 +46,10 @@ private:
 
   /// The starting directions
   const std::vector<Point> & _start_velocities;
-
+  // all species in the study
+  const std::vector<std::string> & _species_list;
+  // species name to index map
+  std::unordered_map<Real, std::string> _species_map;
   /// Whether or not we've generated rays yet (restartable)
   bool & _has_generated;
 
