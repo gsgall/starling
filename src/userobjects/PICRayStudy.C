@@ -44,6 +44,7 @@ PICRayStudy::PICRayStudy(const InputParameters & parameters)
     _v_x_index(registerRayData("v_x")),
     _v_y_index(registerRayData("v_y")),
     _v_z_index(registerRayData("v_z")),
+    _new_particle_index(registerRayData("v_z")),
     _start_points(getParam<std::vector<Point>>("start_points")),
     _start_velocities(getParam<std::vector<Point>>("start_velocities")),
     _species_list(getParam<std::vector<std::string>>("species")),
@@ -77,13 +78,9 @@ PICRayStudy::generateRays()
     // generate the rays for the local rays that we care about
     // and the claiming probably won't be necessary
     std::vector<std::shared_ptr<Ray>> rays(_start_points.size());
-    // Create a ray for each point/direction/velocity triplet
-    // Note that instead of keeping track of the velocity, we're
-    // just going to set the maximum distance that a ray can
-    // travel based on the timestep * the starting velocity.
+    // Create a ray for each point/velocity triplet
     for (const auto i : index_range(_start_points))
     {
-      // std::cout << _fe_problem.mesh().dimension() << std::endl;
       rays[i] = acquireReplicatedRay();
       rays[i]->setStart(_start_points[i]);
       // killed index to check if the ray was killed by a boundary
@@ -94,6 +91,8 @@ PICRayStudy::generateRays()
       rays[i]->data()[_v_x_index] = _start_velocities[i](0);
       rays[i]->data()[_v_y_index] = _start_velocities[i](1);
       rays[i]->data()[_v_z_index] = _start_velocities[i](2);
+
+      rays[i]->data()[_new_particle_index] = false;
 
       // temp direction so we can adjust the direction the ray is
       // traced in for the problem dimension
@@ -106,12 +105,10 @@ PICRayStudy::generateRays()
           direction(0) = _start_velocities[i](0);
           break;
         case 2:
-          std::cout << "2 D Problem" << std::endl;
           direction(0) = _start_velocities[i](0);
           direction(1) = _start_velocities[i](1);
           break;
         case 3:
-          std::cout << "3 D Problem" << std::endl;
           direction(0) = _start_velocities[i](0);
           direction(1) = _start_velocities[i](1);
           direction(2) = _start_velocities[i](2);
@@ -121,7 +118,6 @@ PICRayStudy::generateRays()
       rays[i]->data()[_mass_index] = 0;
       rays[i]->data()[_species_index] = 0;
 
-      std::cout << _fe_problem.mesh().dimension() << std::endl;
       rays[i]->setStartingDirection(direction.unit());
       rays[i]->setStartingMaxDistance(maxDistance(*rays[i]));
     }
@@ -133,7 +129,7 @@ PICRayStudy::generateRays()
     // ...and then add them to be traced
     moveRaysToBuffer(claimed_rays);
   }
-  // Rays are in the bank: reset them and update the velocities
+  // Rays are in the bank: reset them
   else
   {
     // Reset each ray
@@ -142,14 +138,14 @@ PICRayStudy::generateRays()
       auto ray = *it;
       // if the ray was killed by a boundary or a collision then do not
       // add it to the buffer to retrace
-      // really this should add the ray to another holding area to be reused
-      // again when a new particle is created during an ionization or injection
+      // this is still catching the case where a ray ends exactly on the boundary on a previous
+      // step and then starts from the boundary on this step
+      // that case breaks the code
       if (ray->data()[_killed_index])
       {
-        _banked_rays.erase(it);
+        it = _banked_rays.erase(it);
         continue;
       }
-
       // Store off the ray's info before we reset it
       const auto start_point = ray->currentPoint();
       const auto direction = ray->direction();
@@ -191,12 +187,10 @@ PICRayStudy::maxDistance(const Ray & ray) const
       velocity(0) = ray.data()[_v_x_index];
       break;
     case 2:
-      std::cout << "2D" << std::endl;
       velocity(0) = ray.data()[_v_x_index];
       velocity(1) = ray.data()[_v_y_index];
       break;
     case 3:
-      std::cout << "3D" << std::endl;
       velocity(0) = ray.data()[_v_x_index];
       velocity(1) = ray.data()[_v_y_index];
       velocity(2) = ray.data()[_v_z_index];

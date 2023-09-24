@@ -1,18 +1,18 @@
 [Mesh/gmg]
   type = GeneratedMeshGenerator
   dim = 2
-  nx = 10
-  ny = 10
-  xmax = 10
-  ymax = 10
+  nx = 20
+  ny = 20
+  xmax = 20
+  ymax = 20
 []
 
 [UserObjects/study]
   type = PICRayStudy
-  start_points = '0 5.5 0'
-  start_velocities = '1.5 0 1'
+  start_points = '0 10 0'
+  start_velocities = '1 1 1'
   species = 'null'
-  execute_on = TIMESTEP_BEGIN
+  execute_on = 'TIMESTEP_BEGIN'
   always_cache_traces = true
 []
 
@@ -34,7 +34,7 @@
 []
 
 [RayKernels/kernel]
-  type = NullRayKernel
+  type = ModifyTrajectoryKernel
 []
 
 [Outputs/rays]

@@ -30,11 +30,8 @@ public:
   const RayDataIndex _v_x_index;
   const RayDataIndex _v_y_index;
   const RayDataIndex _v_z_index;
+  const RayDataIndex _new_particle_index;
 
-protected:
-  virtual void postExecuteStudy() override;
-
-private:
   /**
    * @return The max distance the given ray should travel at the current time
    *
@@ -42,6 +39,10 @@ private:
    */
   Real maxDistance(const Ray & ray) const;
 
+protected:
+  virtual void postExecuteStudy() override;
+
+private:
   /// The starting points
   const std::vector<Point> & _start_points;
 
