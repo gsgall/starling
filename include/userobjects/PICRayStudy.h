@@ -23,15 +23,16 @@ public:
   static InputParameters validParams();
 
   virtual void generateRays() override;
-
-protected:
-  virtual void postExecuteStudy() override;
+  const RayDataIndex _killed_index;
   const RayDataIndex _charge_index;
   const RayDataIndex _mass_index;
   const RayDataIndex _species_index;
   const RayDataIndex _v_x_index;
   const RayDataIndex _v_y_index;
   const RayDataIndex _v_z_index;
+
+protected:
+  virtual void postExecuteStudy() override;
 
 private:
   /**

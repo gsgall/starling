@@ -3,23 +3,25 @@
   dim = 2
   nx = 10
   ny = 10
-  xmax = 100
-  ymax = 100
+  xmax = 10
+  ymax = 10
 []
 
 [UserObjects/study]
   type = PICRayStudy
-  start_points = '0 0 0
-                  100 100 0
-                  1 99 0
-                  49 49 0'
-  start_velocities = '1 2 1
-                      -2 -1 1
-                      5 -1 1
-                      1 1.1 1'
-  species = 'test1 test2'
+  start_points = '0 5.5 0'
+  start_velocities = '1.5 0 1'
+  species = 'null'
   execute_on = TIMESTEP_BEGIN
   always_cache_traces = true
+[]
+
+[RayBCs]
+  [kill]
+    type = KillParticleBC
+    boundary = 'top bottom right left'
+    study = study
+  []
 []
 
 [Executioner]

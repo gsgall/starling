@@ -37,6 +37,7 @@ PICRayStudy::validParams()
 
 PICRayStudy::PICRayStudy(const InputParameters & parameters)
   : RayTracingStudy(parameters),
+    _killed_index(registerRayData("killed")),
     _charge_index(registerRayData("charge")),
     _mass_index(registerRayData("mass")),
     _species_index(registerRayData("species")),
@@ -85,6 +86,9 @@ PICRayStudy::generateRays()
       // std::cout << _fe_problem.mesh().dimension() << std::endl;
       rays[i] = acquireReplicatedRay();
       rays[i]->setStart(_start_points[i]);
+      // killed index to check if the ray was killed by a boundary
+      // or collision
+      rays[i]->data()[_killed_index] = false;
 
       // saving the inital velocities so we can have 3v (1d or 2d)
       rays[i]->data()[_v_x_index] = _start_velocities[i](0);
@@ -100,14 +104,24 @@ PICRayStudy::generateRays()
       {
         case 1:
           direction(0) = _start_velocities[i](0);
+          break;
         case 2:
+          std::cout << "2 D Problem" << std::endl;
           direction(0) = _start_velocities[i](0);
           direction(1) = _start_velocities[i](1);
+          break;
+        case 3:
+          std::cout << "3 D Problem" << std::endl;
+          direction(0) = _start_velocities[i](0);
+          direction(1) = _start_velocities[i](1);
+          direction(2) = _start_velocities[i](2);
+          break;
       }
       rays[i]->data()[_charge_index] = 0;
       rays[i]->data()[_mass_index] = 0;
       rays[i]->data()[_species_index] = 0;
 
+      std::cout << _fe_problem.mesh().dimension() << std::endl;
       rays[i]->setStartingDirection(direction.unit());
       rays[i]->setStartingMaxDistance(maxDistance(*rays[i]));
     }
@@ -123,8 +137,19 @@ PICRayStudy::generateRays()
   else
   {
     // Reset each ray
-    for (auto & ray : _banked_rays)
+    for (auto it = _banked_rays.begin(); it != _banked_rays.end(); ++it)
     {
+      auto ray = *it;
+      // if the ray was killed by a boundary or a collision then do not
+      // add it to the buffer to retrace
+      // really this should add the ray to another holding area to be reused
+      // again when a new particle is created during an ionization or injection
+      if (ray->data()[_killed_index])
+      {
+        _banked_rays.erase(it);
+        continue;
+      }
+
       // Store off the ray's info before we reset it
       const auto start_point = ray->currentPoint();
       const auto direction = ray->direction();
@@ -159,20 +184,23 @@ PICRayStudy::maxDistance(const Ray & ray) const
 {
   // velocity * dt
   libMesh::Point velocity = Point(0, 0, 0);
-
   // calculating max distance for the correct problem dimention
   switch (_fe_problem.mesh().dimension())
   {
     case 1:
       velocity(0) = ray.data()[_v_x_index];
+      break;
     case 2:
+      std::cout << "2D" << std::endl;
       velocity(0) = ray.data()[_v_x_index];
-      velocity(1) = ray.data()[_v_x_index];
+      velocity(1) = ray.data()[_v_y_index];
+      break;
     case 3:
+      std::cout << "3D" << std::endl;
       velocity(0) = ray.data()[_v_x_index];
       velocity(1) = ray.data()[_v_y_index];
       velocity(2) = ray.data()[_v_z_index];
+      break;
   }
-
   return std::sqrt(velocity * velocity) * _fe_problem.dt();
 }
