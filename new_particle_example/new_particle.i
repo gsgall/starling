@@ -10,7 +10,7 @@
 [UserObjects/study]
   type = PICRayStudy
   start_points = '0 10.5 0'
-  start_velocities = '1 0 1'
+  start_velocities = '0.8 0 1'
   species = 'null'
   execute_on = 'TIMESTEP_BEGIN'
   always_cache_traces = true
