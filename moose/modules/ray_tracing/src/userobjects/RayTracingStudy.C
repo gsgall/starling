@@ -1607,7 +1607,7 @@ RayTracingStudy::resetUniqueRayIDs()
     _threaded_next_ray_id[tid] = (RayID)_pid * (RayID)libMesh::n_threads() + (RayID)tid;
 }
 
-ID
+RayID
 RayTracingStudy::generateUniqueRayID(const THREAD_ID tid)
 {
 
