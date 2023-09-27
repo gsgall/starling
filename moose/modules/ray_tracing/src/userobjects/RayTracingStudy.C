@@ -1610,10 +1610,15 @@ RayTracingStudy::resetUniqueRayIDs()
 RayID
 RayTracingStudy::generateUniqueRayID(const THREAD_ID tid)
 {
-
   // Get the current ID to return
-  const auto id = _threaded_next_ray_id[tid];
-  std::cout << id << std::endl;
+  // hacky way of getting the particle generation to work
+  // with the test case logan gave me
+  auto id = _threaded_next_ray_id[tid];
+  if (id <= _replicated_next_ray_id)
+  {
+    id += _replicated_next_ray_id;
+  }
+  std::cout << "Ray ID: " << id << std::endl;
   // Advance so that the next call has the correct ID
   _threaded_next_ray_id[tid] += (RayID)n_processors() * (RayID)libMesh::n_threads();
 
