@@ -1618,7 +1618,6 @@ RayTracingStudy::generateUniqueRayID(const THREAD_ID tid)
   {
     id += _replicated_next_ray_id;
   }
-  std::cout << "Ray ID: " << id << std::endl;
   // Advance so that the next call has the correct ID
   _threaded_next_ray_id[tid] += (RayID)n_processors() * (RayID)libMesh::n_threads();
 
