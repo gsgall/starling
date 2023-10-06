@@ -45,12 +45,12 @@ PICRayStudy::PICRayStudy(const InputParameters & parameters)
     _v_y_index(registerRayData("v_y")),
     _v_z_index(registerRayData("v_z")),
     _new_particle_index(registerRayData("v_z")),
+    _banked_rays(
+        declareRestartableDataWithContext<std::vector<std::shared_ptr<Ray>>>("_banked_rays", this)),
     _start_points(getParam<std::vector<Point>>("start_points")),
     _start_velocities(getParam<std::vector<Point>>("start_velocities")),
     _species_list(getParam<std::vector<std::string>>("species")),
-    _has_generated(declareRestartableData<bool>("has_generated", false)),
-    _banked_rays(
-        declareRestartableDataWithContext<std::vector<std::shared_ptr<Ray>>>("_banked_rays", this))
+    _has_generated(declareRestartableData<bool>("has_generated", false))
 {
   if (_start_points.size() != _start_velocities.size())
     paramError("start_velocities", "Must be the same size as 'start_points'");
@@ -147,7 +147,6 @@ PICRayStudy::generateRays()
         it = _banked_rays.erase(it);
         continue;
       }
-      std::cout << "Trying to modify ray" << std::endl;
       // Store off the ray's info before we reset it
       const auto start_point = ray->currentPoint();
       const auto direction = ray->direction();

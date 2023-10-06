@@ -39,6 +39,9 @@ public:
    */
   Real maxDistance(const Ray & ray) const;
 
+  /// The banked rays to be used on the next timestep (restartable)
+  std::vector<std::shared_ptr<Ray>> & _banked_rays;
+
 protected:
   virtual void postExecuteStudy() override;
 
@@ -54,7 +57,4 @@ private:
   std::unordered_map<Real, std::string> _species_map;
   /// Whether or not we've generated rays yet (restartable)
   bool & _has_generated;
-
-  /// The banked rays to be used on the next timestep (restartable)
-  std::vector<std::shared_ptr<Ray>> & _banked_rays;
 };
