@@ -9,19 +9,28 @@
 
 #pragma once
 
-#include "IntegralRayKernel.h"
+// Local Includes
+#include "GeneralRayKernel.h"
 #include "MooseVariableInterface.h"
 
-class VariableIntegralRayKernel : public IntegralRayKernel
+class AccessVariableKernel : public GeneralRayKernel
 {
 public:
-  VariableIntegralRayKernel(const InputParameters & params);
+  AccessVariableKernel(const InputParameters & params);
 
   static InputParameters validParams();
 
-protected:
-  virtual Real computeQpIntegral() override;
+  virtual void preTrace() override;
 
-  /// Holds the solution at current quadrature points
-  const VariableValue & _u;
+  virtual void onSegment() override;
+
+protected:
+  /// The variable number of the variable we are operating on
+  const unsigned int _var_number;
+
+  /// A reference to the system containing the variable
+  const System & _system;
+
+  /// The value of the variable at the desired location
+  Real _value;
 };

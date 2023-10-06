@@ -7,29 +7,51 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "VariableIntegralRayKernel.h"
+#include "AccessVariableKernel.h"
+// MOOSE includes
+#include "Function.h"
+#include "MooseMesh.h"
+#include "MooseVariable.h"
+#include "SubProblem.h"
 
-registerMooseObject("RayTracingApp", VariableIntegralRayKernel);
+#include "libmesh/system.h"
+
+registerMooseObject("RayTracingApp", AccessVariableKernel);
 
 InputParameters
-VariableIntegralRayKernel::validParams()
+AccessVariableKernel::validParams()
 {
-  InputParameters params = IntegralRayKernel::validParams();
+  InputParameters params = GeneralRayKernel::validParams();
 
-  params.addClassDescription("Integrates a Variable or AuxVariable along a Ray.");
-
-  params.addRequiredCoupledVar("variable", "The name of the variable to integrate");
-
+  params.addClassDescription("Compute the value of a variable at a specified location.");
+  params.addRequiredParam<VariableName>(
+      "variable", "The name of the variable that this postprocessor operates on.");
+  params.addClassDescription("Compute the value of a variable at a specified location");
   return params;
 }
 
-VariableIntegralRayKernel::VariableIntegralRayKernel(const InputParameters & params)
-  : IntegralRayKernel(params), _u(coupledValue("variable"))
+AccessVariableKernel::AccessVariableKernel(const InputParameters & params)
+  : GeneralRayKernel(params),
+    _var_number(_fe_problem
+                    .getVariable(_tid,
+                                 params.get<VariableName>("variable"),
+                                 Moose::VarKindType::VAR_ANY,
+                                 Moose::VarFieldType::VAR_FIELD_STANDARD)
+                    .number()),
+    _system(_fe_problem.getSystem(getParam<VariableName>("variable"))),
+    _value(0)
 {
 }
 
-Real
-VariableIntegralRayKernel::computeQpIntegral()
+void
+AccessVariableKernel::preTrace()
 {
-  return _u[_qp];
+  std::cout << _system.point_value(
+                   _var_number, currentRay()->currentPoint(), currentRay()->currentElem())
+            << std::endl;
+}
+
+void
+AccessVariableKernel::onSegment()
+{
 }

@@ -25,5 +25,6 @@ void
 KillRayBC::onBoundary(const unsigned int /* num_applying */)
 {
   // After RayBCs are completed, ray->shouldContinue() is checked and this will kill the Ray
+  std::cout << "Ray Hit Bounary" << std::endl;
   currentRay()->setShouldContinue(false);
 }

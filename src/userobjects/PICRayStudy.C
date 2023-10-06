@@ -133,7 +133,7 @@ PICRayStudy::generateRays()
   else
   {
     // Reset each ray
-    for (auto it = _banked_rays.begin(); it != _banked_rays.end(); ++it)
+    for (auto it = _banked_rays.begin(); _banked_rays.size() != 0 && it != _banked_rays.end(); ++it)
     {
       auto ray = *it;
       // if the ray was killed by a boundary or a collision then do not
@@ -143,9 +143,11 @@ PICRayStudy::generateRays()
       // that case breaks the code
       if (ray->data()[_killed_index])
       {
+
         it = _banked_rays.erase(it);
         continue;
       }
+      std::cout << "Trying to modify ray" << std::endl;
       // Store off the ray's info before we reset it
       const auto start_point = ray->currentPoint();
       const auto direction = ray->direction();
@@ -160,9 +162,13 @@ PICRayStudy::generateRays()
       ray->setStartingDirection(direction);
       ray->setStartingMaxDistance(maxDistance(*ray));
     }
+
+    if (_banked_rays.size() != 0)
+    {
+      moveRaysToBuffer(_banked_rays);
+      _banked_rays.clear();
+    }
     // Add the rays to be traced
-    moveRaysToBuffer(_banked_rays);
-    _banked_rays.clear();
   }
 
   _has_generated = true;

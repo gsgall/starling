@@ -25,11 +25,14 @@ KillParticleBC::KillParticleBC(const InputParameters & params) : KillRayBC(param
 void
 KillParticleBC::onBoundary(const unsigned int num_applying)
 {
+
   // After RayBCs are completed, ray->shouldContinue() is checked and this will kill the Ray
   PICRayStudy * picStudy = dynamic_cast<PICRayStudy *>(&_study);
   // giving the ray a killed status so that we can tell it was killed by the boundary
   // and not that it just hit its max distance during the time step
+  std::cout << "Particle Killed" << std::endl;
   if (picStudy)
     currentRay()->data()[picStudy->_killed_index] = true;
+  std::cout << currentRay()->data()[picStudy->_killed_index] << std::endl;
   KillRayBC::onBoundary(num_applying);
 }

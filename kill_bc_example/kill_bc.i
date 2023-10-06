@@ -7,19 +7,20 @@
   ymax = 10
 []
 
-[UserObjects/study]
-  type = PICRayStudy
-  start_points = '0 5.5 0'
-  start_velocities = '1 0 0 '
-  species = 'null'
-  execute_on = 'TIMESTEP_BEGIN'
-  always_cache_traces = true
-  tolerate_failure = true
+[UserObjects]
+  [study]
+    type = PICRayStudy
+    start_points = '0 5.5 0'
+    start_velocities = '1 0 0 '
+    species = 'null'
+    execute_on = 'TIMESTEP_BEGIN'
+    always_cache_traces = true
+  []
 []
 
 [RayBCs]
   [kill]
-    type = KillRayBC
+    type = KillParticleBC
     boundary = 'top bottom right left'
     study = study
   []

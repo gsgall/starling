@@ -1333,7 +1333,6 @@ TraceRay::trace(const std::shared_ptr<Ray> & ray)
         debugRay("RayKernel killed the ray or past max distance");
         traceAssert(!ray->trajectoryChanged(),
                     "RayKernels should not change trajectories of Rays at end");
-
         onCompleteTrace(ray);
         return;
       }
