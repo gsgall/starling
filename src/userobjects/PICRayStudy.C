@@ -27,7 +27,8 @@ PICRayStudy::validParams()
 
   params.addRequiredParam<std::vector<std::string>>(
       "species", "The species of particles that exist in the study");
-
+  params.addRequiredParam<Real>("charge", "The charge of the particles");
+  params.addRequiredParam<Real>("mass", "The mass of the particles");
   // We're not going to use registration because we don't care to name our rays because
   // we will have a lot of them
   params.set<bool>("_use_ray_registration") = false;
@@ -50,10 +51,14 @@ PICRayStudy::PICRayStudy(const InputParameters & parameters)
     _start_points(getParam<std::vector<Point>>("start_points")),
     _start_velocities(getParam<std::vector<Point>>("start_velocities")),
     _species_list(getParam<std::vector<std::string>>("species")),
+    _charge(getParam<Real>("charge")),
+    _mass(getParam<Real>("mass")),
     _has_generated(declareRestartableData<bool>("has_generated", false))
 {
   if (_start_points.size() != _start_velocities.size())
     paramError("start_velocities", "Must be the same size as 'start_points'");
+  if (_mass == 0)
+    paramError("mass", "Particle Mass cannot be 0");
 }
 
 void
@@ -114,8 +119,8 @@ PICRayStudy::generateRays()
           direction(2) = _start_velocities[i](2);
           break;
       }
-      rays[i]->data()[_charge_index] = 0;
-      rays[i]->data()[_mass_index] = 0;
+      rays[i]->data()[_charge_index] = _charge;
+      rays[i]->data()[_mass_index] = _mass;
       rays[i]->data()[_species_index] = 0;
 
       rays[i]->setStartingDirection(direction.unit());

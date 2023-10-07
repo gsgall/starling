@@ -24,7 +24,6 @@ RayDataValues::validParams()
 RayDataValues::RayDataValues(const InputParameters & parameters)
   : GeneralVectorPostprocessor(parameters),
     _study(getUserObject<PICRayStudy>("study")),
-    // _id(declareVector("id")),
     _x(declareVector("x")),
     _y(declareVector("y")),
     _z(declareVector("z")),
@@ -37,7 +36,6 @@ RayDataValues::RayDataValues(const InputParameters & parameters)
 void
 RayDataValues::initialize()
 {
-  // _id.clear();
   _x.clear();
   _y.clear();
   _z.clear();
@@ -54,7 +52,6 @@ RayDataValues::execute()
   for (auto it = rays.begin(); rays.size() != 0 && it != rays.end(); ++it)
   {
     auto ray = *it;
-    // _id.push_back(count);
     _x.push_back(ray->currentPoint()(0));
     _y.push_back(ray->currentPoint()(1));
     _z.push_back(ray->currentPoint()(2));

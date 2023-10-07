@@ -53,6 +53,8 @@ private:
   const std::vector<Point> & _start_velocities;
   // all species in the study
   const std::vector<std::string> & _species_list;
+  const Real & _charge;
+  const Real & _mass;
   // species name to index map
   std::unordered_map<Real, std::string> _species_map;
   /// Whether or not we've generated rays yet (restartable)

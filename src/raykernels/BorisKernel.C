@@ -16,7 +16,9 @@
 
 #include "libmesh/system.h"
 
-registerMooseObject("RayTracingApp", BorisKernel);
+#include "PICRayStudy.h"
+
+registerMooseObject("StarlingApp", BorisKernel);
 
 InputParameters
 BorisKernel::validParams()
@@ -56,7 +58,43 @@ BorisKernel::BorisKernel(const InputParameters & params)
 void
 BorisKernel::preTrace()
 {
+
+  PICRayStudy * picStudy = dynamic_cast<PICRayStudy *>(&_study);
+  // do nothing if it's not a PIC study
+  if (!picStudy)
+    return;
+  // do nothing on the initial time step
+  if (_fe_problem.time() == 0)
+  {
+    return;
+  }
+
   getVectorValues();
+  auto ray = currentRay();
+  auto E = _vectors[0];
+  auto B = _vectors[0];
+  if (_vectors.size() == 2)
+  {
+    B = _vectors[1];
+  }
+  Point v = Point(ray->data()[picStudy->_v_x_index],
+                  ray->data()[picStudy->_v_y_index],
+                  ray->data()[picStudy->_v_z_index]);
+  auto dt = _fe_problem.dt();
+  auto q = ray->data()[picStudy->_charge_index];
+  auto m = ray->data()[picStudy->_mass_index];
+
+  auto v_minus = v + (q / m) * E * dt / 2;
+
+  auto v_plus = v_minus;
+
+  auto v_new = v_plus + (q / m) * E * dt / 2;
+
+  ray->data()[picStudy->_v_x_index] = v_new(0);
+  ray->data()[picStudy->_v_x_index] = v_new(0);
+  ray->data()[picStudy->_v_x_index] = v_new(0);
+
+  ray->setStartingMaxDistance(picStudy->maxDistance(*ray));
 }
 
 void

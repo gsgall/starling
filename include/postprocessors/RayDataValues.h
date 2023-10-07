@@ -28,7 +28,6 @@ protected:
   /// The RayTracingStudy
   const PICRayStudy & _study;
   /// Columns of quadrature point coordinates.
-  // VectorPostprocessorValue & _id;
   VectorPostprocessorValue & _x;
   VectorPostprocessorValue & _y;
   VectorPostprocessorValue & _z;
