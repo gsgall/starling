@@ -1,10 +1,10 @@
 [Mesh/gmg]
   type = GeneratedMeshGenerator
   dim = 2
-  nx = 120
-  ny = 20
-  xmax = 120
-  ymax = 20
+  nx = 25
+  ny = 7
+  xmax = 22
+  ymax = 7
 []
 
 [Variables]
@@ -52,11 +52,11 @@
 [Functions]
   [E_x_ic]
     type = ParsedFunction
-    expression = '5e-7'
+    expression = '0'
   []
   [E_y_ic]
     type = ParsedFunction
-    expression = '0'
+    expression = '-9.81'
   []
   [E_z_ic]
     type = ParsedFunction
@@ -112,11 +112,11 @@
 [UserObjects]
   [study]
     type = PICRayStudy
-    start_points = '0 10.5 0'
-    start_velocities = '1e-3 0 0'
+    start_points = '0 0 0'
+    start_velocities = '10 10 0'
     species = 'null'
-    charge = 1.602176634e-19
-    mass = 9.1093837015e-31
+    charge = 1
+    mass = 1
     execute_on = 'TIMESTEP_BEGIN'
     always_cache_traces = true
   []
@@ -132,8 +132,8 @@
 
 [Executioner]
   type = Transient
-  dt = 1e-4
-  end_time = 5e-2
+  dt = 1e-2
+  end_time = 2
 []
 
 [Problem]
