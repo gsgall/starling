@@ -15,22 +15,21 @@
  * Test study for generating rays for a basic particle-in-cell capability,
  * where Rays have propagate a bit each time step
  */
-class PICRayStudy : public RayTracingStudy
+class CollisionRayStudy : public RayTracingStudy
 {
 public:
-  PICRayStudy(const InputParameters & parameters);
+  CollisionRayStudy(const InputParameters & parameters);
 
   static InputParameters validParams();
 
   virtual void generateRays() override;
-  const RayDataIndex _killed_index;
-  const RayDataIndex _charge_index;
-  const RayDataIndex _mass_index;
-  const RayDataIndex _species_index;
+  // the particle radius
+  const Real _rad;
   const RayDataIndex _v_x_index;
   const RayDataIndex _v_y_index;
   const RayDataIndex _v_z_index;
-  const RayDataIndex _new_particle_index;
+  // map of particles to enable collision checking
+  std::unique_ptr<std::unordered_map<const Elem *, std::vector<std::shared_ptr<Ray>>>> _p_map;
   // sets the rays max dist and direction based on velocity
   void setDirectionAndMaxDistance(Ray & ray);
 
@@ -41,17 +40,16 @@ protected:
   virtual void postExecuteStudy() override;
 
 private:
-  /// The starting points
-  const std::vector<Point> & _start_points;
-
-  /// The starting directions
-  const std::vector<Point> & _start_velocities;
-  // all species in the study
-  const std::vector<std::string> & _species_list;
-  const Real & _charge;
-  const Real & _mass;
-  // species name to index map
-  std::unordered_map<Real, std::string> _species_map;
+  // the number of particles in the study
+  const Real & _n;
+  // the min and max bounds where particles will be generated
+  const Real & _xmin;
+  const Real & _xmax;
+  const Real & _ymin;
+  const Real & _ymax;
+  // the minimum velocity used when generating the rays
+  const Real & _vmin;
+  const Real & _vmax;
   /// Whether or not we've generated rays yet (restartable)
   bool & _has_generated;
 };

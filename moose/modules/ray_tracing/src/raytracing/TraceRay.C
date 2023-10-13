@@ -1609,6 +1609,9 @@ TraceRay::onCompleteTrace(const std::shared_ptr<Ray> & ray)
         _current_cached_trace->lastPoint()._aux_data = ray->auxData();
     }
   }
+  // adding a post trace for collisions and modifications
+  for (RayKernelBase * rk : _study.currentRayKernels(_tid))
+    rk->postTrace();
 }
 
 void

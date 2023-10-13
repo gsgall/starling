@@ -62,6 +62,10 @@ public:
    * part it can trace
    */
   virtual void preTrace();
+  /**
+   * This is called only when the ray has completed its trace
+   */
+  virtual void postTrace();
 
   /**
    * Whether or not this RayKernel needs a segment reinit

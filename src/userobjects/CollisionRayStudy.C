@@ -7,28 +7,29 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "PICRayStudy.h"
+#include "CollisionRayStudy.h"
 
 #include "ClaimRays.h"
 #include "Function.h"
+#include "MooseRandom.h"
 
-registerMooseObject("StarlingApp", PICRayStudy);
+registerMooseObject("StarlingApp", CollisionRayStudy);
 
 InputParameters
-PICRayStudy::validParams()
+CollisionRayStudy::validParams()
 {
   auto params = RayTracingStudy::validParams();
 
-  params.addRequiredParam<std::vector<Point>>("start_points",
-                                              "The point(s) where the ray(s) start");
-  params.addRequiredParam<std::vector<Point>>(
-      "start_velocities",
-      "The direction(s) that the ray(s) start in (does not need to be normalized)");
-
-  params.addRequiredParam<std::vector<std::string>>(
-      "species", "The species of particles that exist in the study");
-  params.addRequiredParam<Real>("charge", "The charge of the particles");
-  params.addRequiredParam<Real>("mass", "The mass of the particles");
+  params.addRequiredParam<Real>("n", "The number of particles in the study");
+  params.addParam<Real>("xmin", 0, "The x minimum of where particles should be generated");
+  params.addRequiredParam<Real>("xmax", "The x maximuim of where particles should be generated");
+  params.addParam<Real>("ymin", 0, "The y minimum of where particles should be generated");
+  params.addRequiredParam<Real>("ymax", "The y maximuim of where particles should be generated");
+  params.addRequiredParam<Real>(
+      "vmin", "The minimum velocity to use when randomly sampling for base particles");
+  params.addRequiredParam<Real>(
+      "vmax", "The maximum velocity to use when randomly sampling for base particles");
+  params.addRequiredParam<Real>("radius", "The effective particle radius");
   // We're not going to use registration because we don't care to name our rays because
   // we will have a lot of them
   params.set<bool>("_use_ray_registration") = false;
@@ -36,39 +37,30 @@ PICRayStudy::validParams()
   return params;
 }
 
-PICRayStudy::PICRayStudy(const InputParameters & parameters)
+CollisionRayStudy::CollisionRayStudy(const InputParameters & parameters)
   : RayTracingStudy(parameters),
-    _killed_index(registerRayData("killed")),
-    _charge_index(registerRayData("charge")),
-    _mass_index(registerRayData("mass")),
-    _species_index(registerRayData("species")),
+    _rad(getParam<Real>("radius")),
     _v_x_index(registerRayData("v_x")),
     _v_y_index(registerRayData("v_y")),
     _v_z_index(registerRayData("v_z")),
-    _new_particle_index(registerRayData("v_z")),
+    _p_map(
+        libmesh_make_unique<std::unordered_map<const Elem *, std::vector<std::shared_ptr<Ray>>>>()),
     _banked_rays(
         declareRestartableDataWithContext<std::vector<std::shared_ptr<Ray>>>("_banked_rays", this)),
-    _start_points(getParam<std::vector<Point>>("start_points")),
-    _start_velocities(getParam<std::vector<Point>>("start_velocities")),
-    _species_list(getParam<std::vector<std::string>>("species")),
-    _charge(getParam<Real>("charge")),
-    _mass(getParam<Real>("mass")),
+    _n(getParam<Real>("n")),
+    _xmin(getParam<Real>("xmin")),
+    _xmax(getParam<Real>("xmax")),
+    _ymin(getParam<Real>("ymin")),
+    _ymax(getParam<Real>("ymax")),
+    _vmin(getParam<Real>("vmin")),
+    _vmax(getParam<Real>("vmax")),
     _has_generated(declareRestartableData<bool>("has_generated", false))
 {
-  if (_start_points.size() != _start_velocities.size())
-    paramError("start_velocities", "Must be the same size as 'start_points'");
-  if (_mass == 0)
-    paramError("mass", "Particle Mass cannot be 0");
 }
 
 void
-PICRayStudy::generateRays()
+CollisionRayStudy::generateRays()
 {
-  // mapping the species names to an index for each one provided
-  for (const auto i : index_range(_species_list))
-  {
-    _species_map[i] = _species_list[i];
-  }
   // We generate rays the first time only, after that we will
   // pull from the bank and update velocities/max distances
   if (!_has_generated)
@@ -82,35 +74,53 @@ PICRayStudy::generateRays()
     // object to do all of the magic. In a real PIC case, we'll just
     // generate the rays for the local rays that we care about
     // and the claiming probably won't be necessary
-    std::vector<std::shared_ptr<Ray>> rays(_start_points.size());
-    // Create a ray for each point/velocity triplet
-    for (const auto i : index_range(_start_points))
+    std::vector<std::shared_ptr<Ray>> rays(_n);
+    // create a buffer so we don't have the possibility of creating a particle
+    // on the boundaries
+    const float xbuffer = 1e-3;
+    const float ybuffer = 1e-3;
+    // the distribution to sample from
+    // Distribution const * dist = &getDistributionByName("uniform");
+    for (int i = 0; i < _n; ++i)
     {
       rays[i] = acquireReplicatedRay();
-      rays[i]->setStart(_start_points[i]);
-      // killed index to check if the ray was killed by a boundary
-      // or collision
-      rays[i]->data()[_killed_index] = false;
+      auto xstart = MooseRandom::rand() * ((_xmax - xbuffer) - (_xmin + xbuffer)) + _xmin + xbuffer;
+      auto ystart = MooseRandom::rand() * ((_ymax - ybuffer) - (_ymin + ybuffer)) + _ymin + ybuffer;
+      rays[i]->setStart(Point(xstart, ystart, 0));
 
-      // saving the inital velocities so we can have 3v (1d or 2d)
-      rays[i]->data()[_v_x_index] = _start_velocities[i](0);
-      rays[i]->data()[_v_y_index] = _start_velocities[i](1);
-      rays[i]->data()[_v_z_index] = _start_velocities[i](2);
+      // randomly assign startign velocities
+      auto vx_start = MooseRandom::rand() * (_vmax - _vmin) + _vmin;
+      if (MooseRandom::rand() > 0.5)
+      {
+        vx_start *= -1;
+      }
 
-      rays[i]->data()[_new_particle_index] = false;
+      auto vy_start = MooseRandom::rand() * (_vmax - _vmin) + _vmin;
 
-      rays[i]->data()[_charge_index] = _charge;
-      rays[i]->data()[_mass_index] = _mass;
-      rays[i]->data()[_species_index] = 0;
+      if (MooseRandom::rand() > 0.5)
+      {
+        vy_start *= -1;
+      }
 
-      // setDirectionAndMaxDistance(*rays[i]);
-      // rays[i]->setShouldContinue(false);
+      auto vz_start = MooseRandom::rand() * (_vmax - _vmin) + _vmin;
+
+      if (MooseRandom::rand() > 0.5)
+      {
+        vz_start *= -1;
+      }
+
+      rays[i]->data()[_v_x_index] = vx_start;
+      rays[i]->data()[_v_y_index] = vy_start;
+      // ignoring z direction for now
+      rays[i]->data()[_v_z_index] = 0;
+      // setting the direction and distance the ray can travel
+      setDirectionAndMaxDistance(*rays[i]);
     }
-
     // Claim the rays
     std::vector<std::shared_ptr<Ray>> claimed_rays;
     ClaimRays claim_rays(*this, rays, claimed_rays, false);
     claim_rays.claim();
+
     // ...and then add them to be traced
     moveRaysToBuffer(claimed_rays);
   }
@@ -121,17 +131,6 @@ PICRayStudy::generateRays()
     for (auto it = _banked_rays.begin(); _banked_rays.size() != 0 && it != _banked_rays.end(); ++it)
     {
       auto ray = *it;
-      // if the ray was killed by a boundary or a collision then do not
-      // add it to the buffer to retrace
-      // this is still catching the case where a ray ends exactly on the boundary on a previous
-      // step and then starts from the boundary on this step
-      // that case breaks the code
-      if (ray->data()[_killed_index])
-      {
-
-        it = _banked_rays.erase(it);
-        continue;
-      }
       // Store off the ray's info before we reset it
       const auto start_point = ray->currentPoint();
 
@@ -143,7 +142,7 @@ PICRayStudy::generateRays()
 
       // And set the new starting information
       ray->setStart(start_point, elem);
-      // setDirectionAndMaxDistance(*ray);
+      setDirectionAndMaxDistance(*ray);
     }
 
     if (_banked_rays.size() != 0)
@@ -158,14 +157,16 @@ PICRayStudy::generateRays()
 }
 
 void
-PICRayStudy::postExecuteStudy()
+CollisionRayStudy::postExecuteStudy()
 {
   // Copy the rays that are banked in the study into our own bank
   _banked_rays = rayBank();
+  // resetting the paricle map
+  _p_map->clear();
 }
 
 void
-PICRayStudy::setDirectionAndMaxDistance(Ray & ray)
+CollisionRayStudy::setDirectionAndMaxDistance(Ray & ray)
 {
   // velocity * dt
   libMesh::Point velocity = Point(0, 0, 0);
