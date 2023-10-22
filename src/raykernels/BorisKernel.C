@@ -165,32 +165,6 @@ BorisKernel::magneticForce(const Point v, const Point B, const Real dt, const Re
   return v_new;
 }
 
-// Point
-// BorisKernel::magneticForce(const Point v, const Point B, const Real dt, const Real q, const Real
-// m)
-// {
-//   // constant multiplied on both sides
-//   const auto a = q * dt / (2 * m);
-//   // left hand side of the equation
-//   const auto b = v + a * v.cross(B);
-//   const auto C = a * B;
-//   // constants for the matrix inversion
-//   const auto D1 = (C(0) - C(1) * C(2)) / (1 + C(2) * C(2));
-//   const auto D2 = 1 / (1 + C(2) * C(2));
-//   const auto D3 = 1 / (1 + C(1) * C(1) - D1 * (-C(0) - C(1) * C(2)));
-//   const auto D4 = D2 * (-C(0) - C(1) * C(2));
-
-//   // redfine the LHS
-//   const auto fy = D2 * (b(1) - C(2) * b(0));
-//   const auto fz = D3 * (b(0) + C(1) * b(0) - D1 * (b(1) - C(2) * b(0)));
-//   // final solution for new velocities
-//   const auto vx = b(0) - C(1) * fz + C(2) * (fy - D4 * fz);
-//   const auto vy = fy - D4 * fz;
-//   // putting it all together in a Point
-//   Point v_new = Point(vx, vy, fz);
-//   return v_new;
-// }
-
 void
 BorisKernel::onSegment()
 {

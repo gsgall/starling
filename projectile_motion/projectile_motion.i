@@ -132,7 +132,7 @@
 
 [Executioner]
   type = Transient
-  dt = 1e-2
+  dt = 1e-3
   end_time = 2
 []
 
@@ -148,17 +148,16 @@
 
 [VectorPostprocessors]
   [ray_data]
-    type = RayDataValues
+    type = SingleRayDataValues
     study = study
     execute_on = 'TIMESTEP_BEGIN'
   []
 []
 
 [Outputs]
-  [rays]
-    type = RayTracingExodus
-    study = study
-    execute_on = 'TIMESTEP_BEGIN'
+  [data]
+    type = CSV
+    execute_on = 'FINAL'
+    file_base = ''
   []
-  csv = true
 []

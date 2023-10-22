@@ -1,10 +1,12 @@
 [Mesh/gmg]
   type = GeneratedMeshGenerator
   dim = 2
-  nx = 120
+  nx = 20
   ny = 20
-  xmax = 120
-  ymax = 20
+  xmin = -10
+  xmax = 10
+  ymin = -10
+  ymax = 10
 []
 
 [Variables]
@@ -52,11 +54,11 @@
 [Functions]
   [E_x_ic]
     type = ParsedFunction
-    expression = '5e-7'
+    expression = '1e-2 * x / (x^2 + y^2 + 1e-6)^(-3/2)'
   []
   [E_y_ic]
     type = ParsedFunction
-    expression = '0'
+    expression = '1e-2 * y / (x^2 + y^2 + 1e-6)^(-3/2)'
   []
   [E_z_ic]
     type = ParsedFunction
@@ -72,7 +74,7 @@
   []
   [B_z_ic]
     type = ParsedFunction
-    expression = '0'
+    expression = 'sqrt(x^2 + y^2)'
   []
 []
 
@@ -112,12 +114,12 @@
 [UserObjects]
   [study]
     type = PICRayStudy
-    start_points = '0 10.5 0'
-    start_velocities = '1e-3 0 0'
+    start_points = '0 1 0'
+    start_velocities = '1 0 0'
     species = 'null'
-    charge = 1.602176634e-19
-    mass = 9.1093837015e-31
-    execute_on = 'TIMESTEP_BEGIN'
+    charge = 1
+    mass = 1
+    execute_on = 'TIMESTEP_END'
     always_cache_traces = true
   []
 []
@@ -133,7 +135,8 @@
 [Executioner]
   type = Transient
   dt = 1e-2
-  end_time = 5e-2
+  num_steps = 1000
+
 []
 
 [Problem]
@@ -148,16 +151,17 @@
 
 [VectorPostprocessors]
   [ray_data]
-    type = SingleRayDataValues
+    type = RayDataValues
     study = study
-    execute_on = 'TIMESTEP_BEGIN'
+    execute_on = 'TIMESTEP_END'
   []
 []
 
 [Outputs]
-  [data]
-    type = CSV
-    execute_on = 'FINAL'
-    file_base = 'dt_1e-2'
+  [rays]
+    type = RayTracingExodus
+    study = study
+    execute_on = 'TIMESTEP_END'
   []
+  csv = true
 []

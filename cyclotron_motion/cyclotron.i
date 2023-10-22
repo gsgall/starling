@@ -119,8 +119,8 @@
     species = 'null'
     charge = -1.602176634e-19
     mass = 9.1093837015e-31
-    execute_on = 'TIMESTEP_END'
-    always_cache_traces = true
+    execute_on = 'TIMESTEP_BEGIN'
+    # always_cache_traces = true
   []
 []
 
@@ -152,17 +152,16 @@
 
 [VectorPostprocessors]
   [ray_data]
-    type = RayDataValues
+    type = SingleRayDataValues
     study = study
-    execute_on = 'TIMESTEP_END'
+    execute_on = 'TIMESTEP_BEGIN'
   []
 []
 
 [Outputs]
-  [rays]
-    type = RayTracingExodus
-    study = study
-    execute_on = 'TIMESTEP_END'
+  [data]
+    type = CSV
+    execute_on = 'FINAL'
+    file_base = ''
   []
-  csv = true
 []
