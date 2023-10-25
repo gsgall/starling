@@ -37,11 +37,6 @@ CollisionKernel::CollisionKernel(const InputParameters & params)
 void
 CollisionKernel::postTrace()
 {
-  if (_fe_problem.time() < 2)
-  {
-    return;
-  }
-
   // if this element has not been added to the map yet we add it
   if (!(*_col_study._p_map).count(currentRay()->currentElem()))
   {

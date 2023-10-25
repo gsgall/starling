@@ -68,4 +68,4 @@ YAML_CPP_DIR := /yaml-cpp
 
 # Set compiler and linker flags for yaml-cpp
 CXXFLAGS += -I$(YAML_CPP_DIR)/include
-LDFLAGS  += -L$(YAML_CPP_DIR)/lib -lyaml-cpp
+LDFLAGS  += -L$(YAML_CPP_DIR)/build -lyaml-cpp
