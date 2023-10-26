@@ -59,13 +59,9 @@ APPLICATION_DIR    := $(CURDIR)
 APPLICATION_NAME   := starling
 BUILD_EXEC         := yes
 GEN_REVISION       := no
+ADDITIONAL_LIBS:="-L$(HOME)/projects/starling/yaml-cpp/build -lyaml-cpp"
+CXXFLAGS += -I$(HOME)/projects/starling/yaml-cpp/include
 include            $(FRAMEWORK_DIR)/app.mk
 
 ###############################################################################
 # Additional special case targets should be added here
-# Specify the location of your yaml-cpp installation
-YAML_CPP_DIR := /yaml-cpp
-
-# Set compiler and linker flags for yaml-cpp
-CXXFLAGS += -I$(YAML_CPP_DIR)/include
-LDFLAGS  += -L$(YAML_CPP_DIR)/build -lyaml-cpp
