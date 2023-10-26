@@ -59,8 +59,8 @@ APPLICATION_DIR    := $(CURDIR)
 APPLICATION_NAME   := starling
 BUILD_EXEC         := yes
 GEN_REVISION       := no
-ADDITIONAL_LIBS:="-L$(HOME)/projects/starling/yaml-cpp/build -lyaml-cpp"
-CXXFLAGS += -I$(HOME)/projects/starling/yaml-cpp/include
+ADDITIONAL_LIBS    :="-L$(HOME)/projects/starling/yaml-cpp/build -lyaml-cpp"
+CXXFLAGS           += -I$(HOME)/projects/starling/yaml-cpp/include
 include            $(FRAMEWORK_DIR)/app.mk
 
 ###############################################################################
